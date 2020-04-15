@@ -27,8 +27,8 @@ class TreeNode:
         self.aiHand = aiHand
         self.cardsPlayed = cardsPlayed
         self.play = play
-        self.value = 0
-        self.probability = 1
+        self.value = 0.0
+        self.probability = 1.0
         self.parent = parent
         self.children = []
 
@@ -111,6 +111,15 @@ class AI:
     def findBestCapture(self, gameBoard, hand):
         return self.__findBestCapture(gameBoard, hand)
 
+    def __intersection(self, list1, list2):
+        result = [value for value in list1 if value in list2]
+        return [value for value in result if value != ""]
+
+    def __union(self, list1, list2):
+        result = list1
+        result.extend(list2)
+        return [value for value in result if value != ""]
+
     def __findBestCapture(self, gameBoard, hand, forBuilds=False, buildValue=0):
         table = gameBoard[0]
         
@@ -127,6 +136,30 @@ class AI:
             plays = self.__findCombinations(table, value)
 
             if plays is not None:
+                if not forBuilds:
+                    if len(plays) > 1:
+                        newPlays = [value for value in plays]
+                        changesMade = True
+                        while changesMade:
+                            changesMade = False
+                            for play in newPlays:
+                                for play2 in plays:
+                                    intersection = self.__intersection(play.split("|"), play2.split("|"))
+                                    if not intersection:
+                                        union = self.__union(play.split("|"), play2.split("|"))
+                                        newUnion = ""
+                                        for item in union:
+                                            newUnion += "|" + item
+                                        union = newUnion
+                                        if union not in newPlays:
+                                            newPlays.append(union)
+                                            changesMade = True
+                        plays = newPlays
+
+
+
+
+
                 # For each play, add the card used for the play at the frot of the play string
                 for i, play in enumerate(plays):
                     plays[i] = pydealer.card.card_abbrev(card.value, card.suit) + plays[i]
@@ -143,6 +176,9 @@ class AI:
                         if self.__getCardValue(card.value) in gameBoard[2]:
                             plays[i] += "|MB" + str(self.__getCardValue(card.value))
 
+            if plays is None:
+                plays = []
+
             if not forBuilds:
                 # add to end of plays for just capturing builds
                 if self.__getCardValue(card.value) in gameBoard[1] and self.__getCardValue(card.value) in gameBoard[2]:
@@ -157,6 +193,8 @@ class AI:
         
         # If no combinations found, trail first card of hand
         if len(combinations) == 0:
+            # if not hand:
+            #     return ""
             return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
 
         # otherwise, figure out the best combo and return that
@@ -187,12 +225,16 @@ class AI:
             cards = copy.deepcopy(hand)
             cards.get(pydealer.card.card_abbrev(card.value, card.suit))
             bestBuild = self.__findBestCapture(gameBoard, cards, forBuilds=True, buildValue=value)
+            # if bestBuild == "":
+            #     return ""
             if bestBuild[0] != "T":
                 bestBuild = "B|" + str(value)+ "|" + bestBuild
                 builds.append(bestBuild)
 
         # If no builds found, trail first card of hand
         if len(builds) == 0:
+            # if not hand:
+            #     return ""
             return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
 
         # otherwise, figure out the best build and return that
@@ -206,15 +248,20 @@ class AI:
 
         return builds[index] + "|" + str(maximum)
 
-    def __createNewTreeNode(self, parent, play, playerMove=False):
+    def __createNewTreeNode(self, parent, play, playerMove=False, playerHand=None):
         # copy current gamestate
         gameBoard = copy.deepcopy(parent.gameBoard)
-        hand = copy.deepcopy(parent.aiHand)
+        hand = playerHand
+        if not playerMove:
+            hand = copy.deepcopy(parent.aiHand)
         cardsPlayed = copy.deepcopy(parent.cardsPlayed)
 
         # Change gamestate to reflect the play
         stack = pydealer.Stack()
         self.playCard(play, gameBoard, hand, cardsPlayed, stack, playerMove=playerMove)
+
+        if playerMove:
+            hand = copy.deepcopy(parent.aiHand)
 
         # create new node for this play
         return TreeNode(gameBoard, hand, cardsPlayed, play, parent)
@@ -258,7 +305,10 @@ class AI:
         # If capture or build isn't possible, each method returns
         # A card to trail
         bestCapture = self.__findBestCapture(parent.gameBoard, parent.aiHand)
-        bestBuild = self.__findBestBuild(parent.gameBoard, parent.aiHand)
+        bestBuild = "T"
+        if parent.aiHand.size > 1:
+            bestBuild = self.__findBestBuild(parent.gameBoard, parent.aiHand)
+
 
         children = []
 
@@ -277,7 +327,7 @@ class AI:
         # (This is the termination condition for our recursive loop)
         if parent.aiHand.size <= 1:
             for node in children:
-                node.value = node.play.split("|")[-1]
+                node.value = int(node.play.split("|")[-1])
             return
         # Otherwise, figure out player's moves, and continue building the tree
         else:
@@ -296,8 +346,11 @@ class AI:
                     # Find the best capture the player could make with this card
                     play = self.__findBestCapture(node.gameBoard, hand)
 
-                    newNode = self.__createNewTreeNode(node, play, playerMove=True)
-                    newNode.probability = (4 - node.cardsPlayed[value]) / (52 - node.cardsPlayed.size)
+                    newNode = self.__createNewTreeNode(node, play, playerMove=True, playerHand=hand)
+                    totalPlayed = 0
+                    for key in node.cardsPlayed.keys():
+                        totalPlayed += node.cardsPlayed[key]
+                    newNode.probability = (4 - node.cardsPlayed[value]) / (52 - totalPlayed)
                     self.__buildTree(newNode)
 
                     # figure out the value of this node (the greater value of it's children)
@@ -315,7 +368,7 @@ class AI:
                 expectedValue = 0.0
                 for child in node.children:
                     expectedValue += child.value * child.probability
-                node.value = expectedValue + node.play.split("|")[-1]
+                node.value = expectedValue + int(node.play.split("|")[-1])
                 
 
 
@@ -342,6 +395,7 @@ class AI:
     def playCard(self, play, gameBoard, hand, cardsPlayed, stack, playerMove=False):
 
         cards = play.split("|")
+        cards = [value for value in cards if value != ""]
 
         # Play is capture
         if cards[0] == "C":
@@ -358,7 +412,7 @@ class AI:
                 if cards[i][0] == "S" or cards[i][0] == "s":
                     captureValue = int(cards[i][2:])
                     stack.add(gameBoard[1][captureValue])
-                    singleBuilds.pop(captureValue)
+                    gameBoard[1].pop(captureValue)
                 elif cards[i][0] == "M" or cards[i][0] == "m":
                     captureValue = int(cards[i][2:])
                     stack.add(gameBoard[2][captureValue])
@@ -369,6 +423,44 @@ class AI:
         # Play is Build
         elif cards[0] == "B":
             buildValue = int(cards[1])
+            cardPlayed = None
+            if not playerMove:
+                cardPlayed = hand.get(cards[2])
+            else:
+                deck = pydealer.Deck(ranks=new_ranks)
+                cardPlayed = deck.get(cards[2])
+
+            cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
+
+            newBuild = pydealer.Stack()
+            singleBuildsToRemove = []
+            isMulti = False
+            for i in range(3, len(cards) - 1):
+                card = cards[i]
+                if card == "":
+                    continue
+                # if it's a build, add to new build and mark old one for removal
+                if card[0] == "S" or card[0] == "s":
+                    value = self.__getCardValue(card[2:])
+                    singleBuildsToRemove.append(value)
+                    newBuild.add(gameBoard[1][value])
+                    isMulti = True
+                elif card[0] == "M" or card[0] == "m":
+                    continue
+                else:
+                    card = gameBoard[0].get(card)
+                    newBuild.add(card)
+
+            newBuild.add(cardPlayed)
+
+            if buildValue in gameBoard[2].keys():
+                gameBoard[2][buildValue].add(newBuild)
+            elif not isMulti:
+                gameBoard[1][buildValue] = newBuild
+            else:
+                gameBoard[2][buildValue] = newBuild
+            for value in singleBuildsToRemove:
+                gameBoard[1].pop(value)
             
         # Play is Trail
         elif cards[0] == "T":
@@ -411,17 +503,25 @@ ai = AI()
 for card in table:
     cardsPlayed[ai.getCardValue(card.value)] += 1
 
+print("Thinking...")
+move = ai.getNextMove([table, singleBuilds, multibuilds], hand, cardsPlayed)
+print("Move Decided: " + move)
+print("")
+
 print(table)
 print(hand)
 print(cardsPlayed)
 
 capture = ai.findBestCapture([table, singleBuilds, multibuilds], hand)
+build = ai.findBestBuild([table, singleBuilds, multibuilds], hand)
 print(capture)
-print(ai.findBestBuild([table, singleBuilds, multibuilds], hand))
+print(build)
 
-if capture[0] == "T":
-    ai.playCard(capture, [table, singleBuilds, multibuilds], hand, cardsPlayed, stack)
+if build[0] == "B":
+    ai.playCard(build, [table, singleBuilds, multibuilds], hand, cardsPlayed, stack)
     print(table)
+    print(singleBuilds)
+    print(multibuilds)
     print(cardsPlayed)
     print(hand)
     
