@@ -121,12 +121,6 @@ class AI:
 
         return value
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def findBestCapture(self, gameBoard, hand):
-        return self.__findBestCapture(gameBoard, hand)
-
     def __intersection(self, list1, list2):
         result = [value for value in list1 if value in list2]
         return [value for value in result if value != ""]
@@ -227,12 +221,6 @@ class AI:
         else:
             return combinations[index]
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def findBestBuild(self, gameBoard, hand):
-        return self.__findBestBuild(gameBoard, hand)
-
     def __findBestBuild(self, gameBoard, hand):
         builds = []
 
@@ -295,12 +283,6 @@ class AI:
             return "K"
         else:
             return "Something went wrong"
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def getCardValue(self, value):
-        return self.__getCardValue(value)
 
     def __getCardValue(self, value):
         if value == "Ace" or value == "ace" or value == "A" or value == "a":
@@ -506,62 +488,4 @@ class AI:
             print("Unexpected error in attempting to play a card")
 
         return
-
-
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Test Code
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-# deck = pydealer.Deck(ranks=new_ranks)
-# hand = pydealer.Stack()
-# hand2 = pydealer.Stack()
-# table = pydealer.Stack()
-# stack = pydealer.Stack()
-# singleBuilds = {}
-# multibuilds = {}
-
-# deck.shuffle()
-
-# table += deck.deal(4)
-# hand += deck.deal(4)
-# hand2 += deck.deal(1)
-
-# cardsPlayed = {}
-# for i in range(1, 14):
-#     cardsPlayed[i] = 0
-
-# ai = AI()
-
-# for card in table:
-#     cardsPlayed[ai.getCardValue(card.value)] += 1
-
-# print("Thinking...")
-# move = ai.getNextMove([table, singleBuilds, multibuilds], hand, cardsPlayed)
-# print("Move Decided: " + move)
-# print("")
-# print("Thinking again...")
-# move = ai.getNextMove([table, singleBuilds, multibuilds], hand2, cardsPlayed)
-# print("Move Decided: " + move)
-# print("")
-
-# print(table)
-# print(hand)
-# print(cardsPlayed)
-
-# capture = ai.findBestCapture([table, singleBuilds, multibuilds], hand)
-# build = ai.findBestBuild([table, singleBuilds, multibuilds], hand)
-# print(capture)
-# print(build)
-
-# if build[0] == "B":
-#     ai.playCard(build, [table, singleBuilds, multibuilds], hand, cardsPlayed, stack)
-#     print(table)
-#     print(singleBuilds)
-#     print(multibuilds)
-#     print(cardsPlayed)
-#     print(hand)
     
