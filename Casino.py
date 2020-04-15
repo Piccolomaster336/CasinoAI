@@ -86,7 +86,7 @@ def getCardValue(value):
 
 
 def main():
-    print("CasinoAI\nby Ryan Kelly\n")
+    print("\n\nCasinoAI\nby Ryan Kelly\n")
     print("Game rules can be found online at\nhttps://www.pagat.com/fishing/casino.html\n")
     input("Press Enter to Start")
 
