@@ -3,4 +3,4 @@
 
 To run, run the Casino.py file.
 
-Requires PyDealer and Gambit be installed.
+Requires PyDealer be installed.

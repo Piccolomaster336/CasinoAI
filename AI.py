@@ -213,7 +213,8 @@ class AI:
         cardsPlayed = copy.deepcopy(parent.cardsPlayed)
 
         # Change gamestate to reflect the play
-        self.playCard(play, gameBoard, hand, cardsPlayed, playerMove=playerMove)
+        stack = pydealer.Stack()
+        self.playCard(play, gameBoard, hand, cardsPlayed, stack, playerMove=playerMove)
 
         # create new node for this play
         return TreeNode(gameBoard, hand, cardsPlayed, play, parent)
@@ -328,9 +329,57 @@ class AI:
 
         self.__buildTree(root)
 
+        if len(root.children) == 1:
+            return root.children[0].play
+        else:
+            value = root.children[0].value
+            if value > root.children[1].value:
+                return root.children[0].play
+            else:
+                return root.children[1].play
+
         
-    def playCard(self, play, gameBoard, hand, cardsPlayed, playerMove=False):
-        return ""
+    def playCard(self, play, gameBoard, hand, cardsPlayed, stack, playerMove=False):
+
+        cards = play.split("|")
+
+        # Play is capture
+        if cards[0] == "C":
+            cardPlayed = None
+            if not playerMove:
+                cardPlayed = hand.get(cards[1])
+            else:
+                deck = pydealer.Deck(ranks=new_ranks)
+                cardPlayed = deck.get(cards[1])
+
+            cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
+            stack.add(cardPlayed)
+            for i in range(2, len(cards) - 1):
+                if cards[i][0] == "S" or cards[i][0] == "s":
+                    captureValue = int(cards[i][2:])
+                    stack.add(gameBoard[1][captureValue])
+                    singleBuilds.pop(captureValue)
+                elif cards[i][0] == "M" or cards[i][0] == "m":
+                    captureValue = int(cards[i][2:])
+                    stack.add(gameBoard[2][captureValue])
+                    gameBoard[2].pop(captureValue)
+                else:
+                    stack.add(gameBoard[0].get(cards[i]))
+            
+        # Play is Build
+        elif cards[0] == "B":
+            buildValue = int(cards[1])
+            
+        # Play is Trail
+        elif cards[0] == "T":
+            card = hand.get(cards[1])
+            cardsPlayed[self.__getCardValue(card[0].value)] += 1
+            gameBoard[0].add(card)
+
+        else:
+            print("Unexpected error in attempting to play a card")
+
+        return
 
 
 
@@ -344,6 +393,7 @@ class AI:
 deck = pydealer.Deck(ranks=new_ranks)
 hand = pydealer.Stack()
 table = pydealer.Stack()
+stack = pydealer.Stack()
 singleBuilds = {}
 multibuilds = {}
 
@@ -365,6 +415,13 @@ print(table)
 print(hand)
 print(cardsPlayed)
 
-print(ai.findBestCapture([table, singleBuilds, multibuilds], hand))
+capture = ai.findBestCapture([table, singleBuilds, multibuilds], hand)
+print(capture)
 print(ai.findBestBuild([table, singleBuilds, multibuilds], hand))
 
+if capture[0] == "T":
+    ai.playCard(capture, [table, singleBuilds, multibuilds], hand, cardsPlayed, stack)
+    print(table)
+    print(cardsPlayed)
+    print(hand)
+    
