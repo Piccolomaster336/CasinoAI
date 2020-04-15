@@ -616,6 +616,7 @@ def main():
         # Ace = 1 per
         # 10D = 2
         # 2s = 1
+        print("\n------------------------------")
         print("\nRound over\n\nTallying points...\n")
 
         print("Most cards (3pts): ", end="")
@@ -690,7 +691,7 @@ def main():
     else:
         print("Tie!\n")
 
-    print("Final Score\n\nPlayer: %d\nAI: %d\n\n" % (playerPoints, aiPoints))
+    print("Final Score:\n\tPlayer: %d\n\tAI: %d\n\n" % (playerPoints, aiPoints))
 
 
 main()
