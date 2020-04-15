@@ -411,7 +411,8 @@ class AI:
                 deck = pydealer.Deck(ranks=new_ranks)
                 cardPlayed = deck.get(cards[1])
 
-            cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
+            if playerMove:
+                cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
             stack.add(cardPlayed)
             for i in range(2, len(cards) - 1):
                 if cards[i][0] == "S" or cards[i][0] == "s":
@@ -441,7 +442,8 @@ class AI:
                 deck = pydealer.Deck(ranks=new_ranks)
                 cardPlayed = deck.get(card)
 
-            cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
+            if playerMove:
+                cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
 
             newBuild = pydealer.Stack()
             singleBuildsToRemove = []
@@ -476,7 +478,8 @@ class AI:
         # Play is Trail
         elif cards[0] == "T":
             card = hand.get(cards[1])
-            cardsPlayed[self.__getCardValue(card[0].value)] += 1
+            if playerMove:
+                cardsPlayed[self.__getCardValue(card[0].value)] += 1
             gameBoard[0].add(card)
 
         else:

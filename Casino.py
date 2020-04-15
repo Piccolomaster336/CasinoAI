@@ -1,4 +1,5 @@
 import pydealer
+from AI import AI
 
 # Define a new rank dict, ``new_ranks``, with ranks for card faces only.
 new_ranks = {
@@ -100,12 +101,18 @@ def main():
     aiPoints = 0
     playerPoints = 0
 
+    ai = AI()
+
     dealer = "ai"
 
     while aiPoints < 21 and playerPoints < 21:
 
         lastCapture = ""
         firstDeal = True
+
+        cardsPlayed = {}
+        for i in range(1, 14):
+            cardsPlayed[i] = 0
 
         # Deal starting cards (total 4 to each player and table)
         if dealer == "ai":
@@ -123,8 +130,9 @@ def main():
             table += deck.deal(2)
             playerHand += deck.deal(2)
 
-        # printBoard(aiHand.size, playerHand, table, builds)
-        # exit(0)
+        # update known cards with table cards
+        for card in table:
+            cardsPlayed[getCardValue(card.value)] += 1
 
         # Start loop for this round (loop until we run out of cards in deck)
         while deck.size > 0:
@@ -143,6 +151,10 @@ def main():
                     playerHand += deck.deal(2)
             else:
                 firstDeal = False
+
+            # Update known cards with ai's hand
+            for card in aiHand:
+                cardsPlayed[getCardValue(card.value)] += 1
 
             # figure out who goes first this round
             playerTurn = True
@@ -184,8 +196,9 @@ def main():
                                     if not card:
                                         print("Card not found, please try again")
 
-                                    # If we found the card, add to table and break loop
+                                    # If we found the card, add to table, update cardsPlayed, and break loop
                                     else:
+                                        cardsPlayed[getCardValue(card[0].value)] += 1
                                         table.add(card)
                                         cardSelected = True
 
@@ -300,6 +313,7 @@ def main():
                                                                             card = table.get(card)
                                                                             newBuild.add(card)
 
+                                                                    cardsPlayed[getCardValue(buildCard[0].value)] += 1
                                                                     newBuild.add(buildCard[0])
                                                                     
                                                                     singleBuilds[buildValue] = newBuild
@@ -377,6 +391,7 @@ def main():
                                                                         card = table.get(card)
                                                                         newBuild.add(card)
 
+                                                                cardsPlayed[getCardValue(buildCard[0].value)] += 1
                                                                 newBuild.add(buildCard[0])
                                                                 
                                                                 if buildValue in multiBuilds.keys():
@@ -498,6 +513,7 @@ def main():
                                                         multiBuilds.pop(captureValue)
                                                     else:
                                                         playerStack.add(table.get(card.strip()))
+                                                cardsPlayed[getCardValue(captureCard[0].value)] += 1
                                                 playerStack.add(captureCard)
                                                 captureCardsSelected = True
                                             else:
@@ -536,7 +552,13 @@ def main():
                         playerTurn = True
                     # if AI has cards...
                     else:
-                        table.add(aiHand.get(str(aiHand[0].value) + " of " + str(aiHand[0].suit)))
+                        print("\nThe AI is thinking...")
+                        aiMove = ai.getNextMove([table, singleBuilds, multiBuilds], aiHand, cardsPlayed)
+                        if aiMove[0] == "C":
+                            lastCapture = "ai"
+                        print("AI's Move: " + aiMove)
+                        print("\n")
+                        ai.playCard(aiMove, [table, singleBuilds, multiBuilds], aiHand, cardsPlayed, aiStack)
                         playerTurn = True
 
         # With the deck exhausted, cleanup table, score points, and set up next round
