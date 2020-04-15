@@ -75,7 +75,20 @@ class AI:
         else:
             return None
 
-    def __getPlayValue(self, play):
+    def __getBuildValue(self, build, gameBoard):
+        buildValue = int(build[2:])
+        play = ""
+        i = 0
+        ms = 2
+        if build[0] == "S":
+            ms = 1
+        while i < len(gameBoard[ms][buildValue]):
+            card = gameBoard[ms][buildValue][i]
+            play += "|" + pydealer.card.card_abbrev(card.value, card.suit)
+            i += 1
+        return self.__getPlayValue(play, gameBoard)
+
+    def __getPlayValue(self, play, gameBoard):
         if len(play) == 0:
             return -1
         if play[0] == "|":
@@ -83,12 +96,15 @@ class AI:
         cards = play.split("|")
         value = 0
 
+
         for card in cards:
             if len(card) == 0:
                 continue
             # If it's a play indicator, skip
             if card[0] == "T" or card[0] == "C" or card[0] == "B":
                 continue
+            if card[0] == "S" or card[0] == "M":
+                value += self.__getBuildValue(card, gameBoard)
 
             if card == "10D":
                 value += 10
@@ -163,7 +179,7 @@ class AI:
                 # For each play, add the card used for the play at the frot of the play string
                 for i, play in enumerate(plays):
                     plays[i] = pydealer.card.card_abbrev(card.value, card.suit) + plays[i]
-                    if self.__getCardValue(card.value) in gameBoard[1]:
+                    if value in gameBoard[1]:
                             plays[i] += "|SB" + str(self.__getCardValue(card.value))
 
                 if not forBuilds:
@@ -185,7 +201,7 @@ class AI:
                     plays.append("C|%s|SB%d|MB%d" % (pydealer.card.card_abbrev(card.value, card.suit), self.__getCardValue(card.value), self.__getCardValue(card.value)))
                 elif self.__getCardValue(card.value) in gameBoard[2]:
                     plays.append("C|"+ pydealer.card.card_abbrev(card.value, card.suit) +"|MB" + str(self.__getCardValue(card.value)))
-            if self.__getCardValue(card.value) in gameBoard[1]:
+            if value in gameBoard[1]:
                 plays.append("C|"+ pydealer.card.card_abbrev(card.value, card.suit) +"|SB" + str(self.__getCardValue(card.value)))
 
             if plays is not None:
@@ -201,7 +217,7 @@ class AI:
         index = 0
         maximum = 0
         for i, play in enumerate(combinations):
-            value = self.__getPlayValue(play)
+            value = self.__getPlayValue(play, gameBoard)
             if value > maximum:
                 maximum = value
                 index = i
@@ -241,7 +257,7 @@ class AI:
         index = 0
         maximum = 0
         for i, play in enumerate(builds):
-            value = self.__getPlayValue(play)
+            value = self.__getPlayValue(play, gameBoard)
             if value > maximum:
                 maximum = value
                 index = i
@@ -468,6 +484,10 @@ class AI:
 
             if buildValue in gameBoard[2].keys():
                 gameBoard[2][buildValue].add(newBuild)
+            elif buildValue in gameBoard[1].keys():
+                singleBuildsToRemove.append(buildValue)
+                newBuild.add(gameBoard[1][buildValue])
+                gameBoard[2][buildValue] = newBuild
             elif not isMulti:
                 gameBoard[1][buildValue] = newBuild
             else:
@@ -496,52 +516,52 @@ class AI:
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-deck = pydealer.Deck(ranks=new_ranks)
-hand = pydealer.Stack()
-hand2 = pydealer.Stack()
-table = pydealer.Stack()
-stack = pydealer.Stack()
-singleBuilds = {}
-multibuilds = {}
+# deck = pydealer.Deck(ranks=new_ranks)
+# hand = pydealer.Stack()
+# hand2 = pydealer.Stack()
+# table = pydealer.Stack()
+# stack = pydealer.Stack()
+# singleBuilds = {}
+# multibuilds = {}
 
-deck.shuffle()
+# deck.shuffle()
 
-table += deck.deal(4)
-hand += deck.deal(4)
-hand2 += deck.deal(1)
+# table += deck.deal(4)
+# hand += deck.deal(4)
+# hand2 += deck.deal(1)
 
-cardsPlayed = {}
-for i in range(1, 14):
-    cardsPlayed[i] = 0
+# cardsPlayed = {}
+# for i in range(1, 14):
+#     cardsPlayed[i] = 0
 
-ai = AI()
+# ai = AI()
 
-for card in table:
-    cardsPlayed[ai.getCardValue(card.value)] += 1
+# for card in table:
+#     cardsPlayed[ai.getCardValue(card.value)] += 1
 
-print("Thinking...")
-move = ai.getNextMove([table, singleBuilds, multibuilds], hand, cardsPlayed)
-print("Move Decided: " + move)
-print("")
-print("Thinking again...")
-move = ai.getNextMove([table, singleBuilds, multibuilds], hand2, cardsPlayed)
-print("Move Decided: " + move)
-print("")
+# print("Thinking...")
+# move = ai.getNextMove([table, singleBuilds, multibuilds], hand, cardsPlayed)
+# print("Move Decided: " + move)
+# print("")
+# print("Thinking again...")
+# move = ai.getNextMove([table, singleBuilds, multibuilds], hand2, cardsPlayed)
+# print("Move Decided: " + move)
+# print("")
 
-print(table)
-print(hand)
-print(cardsPlayed)
+# print(table)
+# print(hand)
+# print(cardsPlayed)
 
-capture = ai.findBestCapture([table, singleBuilds, multibuilds], hand)
-build = ai.findBestBuild([table, singleBuilds, multibuilds], hand)
-print(capture)
-print(build)
+# capture = ai.findBestCapture([table, singleBuilds, multibuilds], hand)
+# build = ai.findBestBuild([table, singleBuilds, multibuilds], hand)
+# print(capture)
+# print(build)
 
-if build[0] == "B":
-    ai.playCard(build, [table, singleBuilds, multibuilds], hand, cardsPlayed, stack)
-    print(table)
-    print(singleBuilds)
-    print(multibuilds)
-    print(cardsPlayed)
-    print(hand)
+# if build[0] == "B":
+#     ai.playCard(build, [table, singleBuilds, multibuilds], hand, cardsPlayed, stack)
+#     print(table)
+#     print(singleBuilds)
+#     print(multibuilds)
+#     print(cardsPlayed)
+#     print(hand)
     

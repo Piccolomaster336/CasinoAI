@@ -22,6 +22,7 @@ new_ranks = {
 
 # Function for printing the board to  the screen
 def printBoard(aiHandSize, playerHand, table):
+    print("\n------------------------------")
     print("")
     print("AI Cards: %d\n" % aiHandSize)
     
@@ -85,6 +86,10 @@ def getCardValue(value):
 
 
 def main():
+    print("CasinoAI\nby Ryan Kelly\n")
+    print("Game rules can be found online at\nhttps://www.pagat.com/fishing/casino.html\n")
+    input("Press Enter to Start")
+
     deck = pydealer.Deck(ranks=new_ranks)
     deck.shuffle()
 
@@ -161,9 +166,6 @@ def main():
             if dealer == "player":
                 playerTurn = False
             
-            # Print the initial board state if player doesn't go first
-            if not playerTurn:
-                printBoard(aiHand.size, playerHand, [table, singleBuilds, multiBuilds])
             
             # Loop through playing cards
             while playerHand.size > 0 or aiHand.size > 0:
@@ -189,6 +191,8 @@ def main():
                                     if card == "b":
                                         goBack = True
                                         break
+                                    if card == "":
+                                        continue
 
                                     card = playerHand.get(card)
 
@@ -217,6 +221,8 @@ def main():
                                     if buildValue == "b":
                                         goBack = True
                                         break
+                                    if buildValue == "":
+                                        continue
 
                                     validBuildValue = False
                                     buildValue = getCardValue(buildValue)
@@ -235,6 +241,8 @@ def main():
                                             if buildCard == "b":
                                                 buildGoBack = True
                                                 break
+                                            if buildCard == "":
+                                                continue
                                         
                                             buildCard = playerHand.get(buildCard)
 
@@ -245,7 +253,7 @@ def main():
                                             # If selected card is can't be used
                                             # (either the selected card is greater than the build value
                                             # or it's the card used for the build value without a second copy)
-                                            elif getCardValue(buildCard[0].value) > buildValue or (getCardValue(buildCard[0].value) == buildValue and not playerHand.get(buildCard[0].value)):
+                                            elif getCardValue(buildCard[0].value) > buildValue or (getCardValue(buildCard[0].value) == buildValue and not playerHand.find(buildCard[0].value)):
                                                 print("Selected card can't be used to build %d. Please try again" % (buildValue))
                                             # Otherwise, the card selected is good
                                             else:
@@ -258,6 +266,8 @@ def main():
                                                     if singleMultiInput == "b":
                                                         singleMultiGoBack = True
                                                         break
+                                                    if singleMultiInput == "":
+                                                        continue
 
                                                     if singleMultiInput == "Single" or singleMultiInput == "single" or singleMultiInput == "S" or singleMultiInput == "s":
                                                         # Single Build stuff
@@ -272,6 +282,8 @@ def main():
                                                                 if singleCards == "b":
                                                                     singleGoBack = True
                                                                     break
+                                                                if singleCards == "":
+                                                                    continue
 
                                                                 singleCards = singleCards.split(",")
                                                                 # validate input
@@ -279,6 +291,7 @@ def main():
                                                                 runningTotal = 0
                                                                 for card in singleCards:
                                                                     card = card.strip()
+                                                                    
                                                                     # if this is a single build
                                                                     if card[0] == "S" or card[0] == "s":
                                                                         if not getCardValue(card[2:]) in singleBuilds.keys():
@@ -319,20 +332,23 @@ def main():
                                                                     singleBuilds[buildValue] = newBuild
                                                                     for value in singleBuildsToRemove:
                                                                         singleBuilds.pop(value)
+                                                                
 
 
-                                                            if not singleGoBack:
-                                                                singleSelected = True
+                                                                if not singleGoBack:
+                                                                    singleSelected = True
 
                                                     elif singleMultiInput == "Multiple" or singleMultiInput == "multiple" or singleMultiInput == "M" or singleMultiInput == "m":
                                                         #multi build stuff
                                                         multiSelected = False
                                                         multiGoBack = False
                                                         while not multiSelected:
-                                                            multiCards = input("Select cards and builds to be used in the multibuild,\nseperated by commas (type 'b' to go back)")
+                                                            multiCards = input("Select cards and builds to be used in the multibuild,\nseperated by commas (type 'b' to go back): ")
                                                             if multiCards == "b":
                                                                 multiGoBack = True
                                                                 break
+                                                            if multiCards == "":
+                                                                continue
 
                                                             multiCards = multiCards.split(",")
                                                             
@@ -342,6 +358,7 @@ def main():
                                                             buildCount = 0
                                                             for card in multiCards:
                                                                 card = card.strip()
+                                                              
                                                                 # If it's a single build
                                                                 if card[0] == "S" or card[0] == "s":
                                                                     if not getCardValue(card[2:]) in singleBuilds.keys():
@@ -400,24 +417,24 @@ def main():
                                                                     multiBuilds[buildValue] = newBuild
                                                                 for value in singleBuildsToRemove:
                                                                     singleBuilds.pop(value)
+                                                            
 
 
-
-                                                        if not multiGoBack:
-                                                            multiSelected = True
+                                                            if not multiGoBack:
+                                                                multiSelected = True
                                                     else:
                                                         print("Incorrect input detected. Please try again")
 
 
-                                                if not singleMultiGoBack:
-                                                    singleMultiSelected = True
+                                                    if not singleMultiGoBack:
+                                                        singleMultiSelected = True
                                                 # Format input as sb# for single builds,
                                                 # mb# for multi builds
                                             
-                                        if not buildGoBack:
-                                            buildCardSelected = True
-                                        else:
-                                            playerHand.add(buildCard)
+                                            if not buildGoBack:
+                                                buildCardSelected = True
+                                            else:
+                                                playerHand.add(buildCard)
                                     
                                     if not goBack:
                                         buildSelected = True
@@ -439,6 +456,8 @@ def main():
                                     if captureCard == "b":
                                         goBack = True
                                         break
+                                    if captureCard == "":
+                                        continue
 
                                     captureCard = playerHand.get(captureCard)
 
@@ -458,7 +477,9 @@ def main():
                                             cards = input("Select cards and builds to capture, seperated by commas. Type 'b' to go back\n(note: card sets must be sequential): ")
                                             if cards == "b":
                                                 captureGoBack = True
-                                                break    
+                                                break
+                                            if cards == "":
+                                                continue
                                             cards = cards.split(",")
                                         
                                             
@@ -552,12 +573,19 @@ def main():
                         playerTurn = True
                     # if AI has cards...
                     else:
+                        printBoard(aiHand.size, playerHand, [table, singleBuilds, multiBuilds])
                         print("\nThe AI is thinking...")
                         aiMove = ai.getNextMove([table, singleBuilds, multiBuilds], aiHand, cardsPlayed)
                         if aiMove[0] == "C":
                             lastCapture = "ai"
-                        print("AI's Move: " + aiMove)
-                        print("\n")
+                        print("AI's Move: ", end="")
+                        if aiMove[0] == "C":
+                            print("Capture %s" % (aiMove.split("|")[1][:-1]))
+                        elif aiMove[0] == "B":
+                            print("Build %s" % (aiMove.split("|")[1]))
+                        else:
+                            print("Trail [%s]" % (aiMove.split("|")[1]))
+                        
                         ai.playCard(aiMove, [table, singleBuilds, multiBuilds], aiHand, cardsPlayed, aiStack)
                         playerTurn = True
 
@@ -580,6 +608,7 @@ def main():
         lastCapture = ""
         singleBuilds = {}
         multiBuilds = {}
+        table.empty()
 
         # Tally Points
         # Most cards = 3
@@ -587,35 +616,51 @@ def main():
         # Ace = 1 per
         # 10D = 2
         # 2s = 1
+        print("\nRound over\n\nTallying points...\n")
 
+        print("Most cards (3pts): ", end="")
         if playerStack.size > aiStack.size:
             playerPoints += 3
+            print("Player")
         else:
             aiPoints += 3
+            print("AI")
 
+        print("Most spades (1pt): ", end="")
         playerSpades = playerStack.find("S")
         aiSpades = aiStack.find("S")
         if len(playerSpades) > len(aiSpades):
             playerPoints += 1
+            print("Player")
         else: 
             aiPoints += 1
-        
-        playerPoints += len(playerStack.find("A"))
-        aiPoints += len(aiStack.find("A"))
+            print("AI")
 
+        print("Aces (1pt each):")
+        playerPoints += len(playerStack.find("A"))
+        print("\tPlayer: %d" % (len(playerStack.find("A"))))
+        aiPoints += len(aiStack.find("A"))
+        print("\tAI: %d" % (len(aiStack.find("A"))))
+
+        print("Big Casino (2pts): ", end="")
         playerBC = playerStack.get("10D")
         aiBC = aiStack.get("10D")
         if playerBC:
             playerPoints += 2
+            print("Player")
         if aiBC:
             aiPoints += 2
+            print("AI")
 
+        print("Little Casino (1pt): ", end="")
         playerLC = playerStack.get("2S")
         aiLC = aiStack.get("2S")
         if playerLC:
             playerPoints += 1
+            print("Player")
         if aiLC:
             aiPoints += 1
+            print("AI")
 
 
 
@@ -634,6 +679,18 @@ def main():
         aiStack.empty()
 
         print("\nCurrent Totals:\nPlayer Points: %d\nAI Points: %d\n\n" % (playerPoints, aiPoints))
+
+        input("Press enter to continue")
+
+    print("")
+    if aiPoints > playerPoints:
+        print("AI Wins!\n")
+    elif playerPoints > aiPoints:
+        print("Player Wins!\n")
+    else:
+        print("Tie!\n")
+
+    print("Final Score\n\nPlayer: %d\nAI: %d\n\n" % (playerPoints, aiPoints))
 
 
 main()
