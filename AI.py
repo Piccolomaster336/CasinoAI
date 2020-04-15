@@ -304,6 +304,11 @@ class AI:
         # Find the best capture and build given the current gamestate
         # If capture or build isn't possible, each method returns
         # A card to trail
+        # print("DEBUG")
+        # print("best capture")
+        # print(parent.aiHand)
+        # print("")
+
         bestCapture = self.__findBestCapture(parent.gameBoard, parent.aiHand)
         bestBuild = "T"
         if parent.aiHand.size > 1:
@@ -425,10 +430,16 @@ class AI:
             buildValue = int(cards[1])
             cardPlayed = None
             if not playerMove:
-                cardPlayed = hand.get(cards[2])
+                card = cards[2]
+                if card == "C":
+                    card = cards[3]
+                cardPlayed = hand.get(card)
             else:
+                card = cards[2]
+                if card == "C":
+                    card = cards[3]
                 deck = pydealer.Deck(ranks=new_ranks)
-                cardPlayed = deck.get(cards[2])
+                cardPlayed = deck.get(card)
 
             cardsPlayed[self.__getCardValue(cardPlayed[0].value)] += 1
 
@@ -437,7 +448,7 @@ class AI:
             isMulti = False
             for i in range(3, len(cards) - 1):
                 card = cards[i]
-                if card == "":
+                if card == "" or card == "C":
                     continue
                 # if it's a build, add to new build and mark old one for removal
                 if card[0] == "S" or card[0] == "s":
@@ -484,6 +495,7 @@ class AI:
 
 deck = pydealer.Deck(ranks=new_ranks)
 hand = pydealer.Stack()
+hand2 = pydealer.Stack()
 table = pydealer.Stack()
 stack = pydealer.Stack()
 singleBuilds = {}
@@ -493,6 +505,7 @@ deck.shuffle()
 
 table += deck.deal(4)
 hand += deck.deal(4)
+hand2 += deck.deal(1)
 
 cardsPlayed = {}
 for i in range(1, 14):
@@ -505,6 +518,10 @@ for card in table:
 
 print("Thinking...")
 move = ai.getNextMove([table, singleBuilds, multibuilds], hand, cardsPlayed)
+print("Move Decided: " + move)
+print("")
+print("Thinking again...")
+move = ai.getNextMove([table, singleBuilds, multibuilds], hand2, cardsPlayed)
 print("Move Decided: " + move)
 print("")
 
