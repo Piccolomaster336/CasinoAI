@@ -1,6 +1,23 @@
 import pydealer
 import copy
 
+new_ranks = {
+    "values": {
+        "Ace": 1,
+        "King": 13,
+        "Queen": 12,
+        "Jack": 11,
+        "10": 10,
+        "9": 9,
+        "8": 8,
+        "7": 7,
+        "6": 6,
+        "5": 5,
+        "4": 4,
+        "3": 3,
+        "2": 2
+    }
+}
 
 class TreeNode:
 
@@ -24,25 +41,34 @@ class TreeNode:
 
 class AI:
     """Class for managing the AI for Casino.py"""
-    def __init__(self, gameBoard, hand, cardsPlayed):
-        self.gameBoard = gameBoard
-        self.hand = hand
-        self.cardsPlayed = cardsPlayed
+    # def __init__(self, gameBoard, hand, cardsPlayed):
+    #     self.gameBoard = gameBoard
+    #     self.hand = hand
+    #     self.cardsPlayed = cardsPlayed
 
     def __findCombinations(self, table, value):
         combinations = []
+
+        # print(table is pydealer.Card)
+        # print("DEBUG: table Size = %d" % (table.size))
 
         for i, card in enumerate(table):
             if self.__getCardValue(card.value) > value:
                 continue
             elif self.__getCardValue(card.value) == value:
-                combinations.append("/" + pydealer.card.card_abbrev(card.value, card.suit))
-                combinations.extend(self.__findCombinations(table[i+1:], value))
+                combinations.append("|" + pydealer.card.card_abbrev(card.value, card.suit))
+                stack = copy.deepcopy(table)
+                stack.get(pydealer.card.card_abbrev(card.value, card.suit))
+                otherCombinations = self.__findCombinations(stack, value)
+                if otherCombinations is not None:
+                    combinations.extend(otherCombinations)
             elif i < table.size - 1:
-                subCombinations = self.__findCombinations(table[i+1], value - self.__getCardValue(card.value))
+                stack = copy.deepcopy(table)
+                stack.get(pydealer.card.card_abbrev(card.value, card.suit))
+                subCombinations = self.__findCombinations(stack, value - self.__getCardValue(card.value))
                 if subCombinations is not None:
                     for combo in subCombinations:
-                        combinations.append("/" + pydealer.card.card_abbrev(card.value, card.suit) + "/" + combo)
+                        combinations.append("|" + pydealer.card.card_abbrev(card.value, card.suit) + "|" + combo)
 
         if len(combinations) > 0:
             return combinations
@@ -50,10 +76,16 @@ class AI:
             return None
 
     def __getPlayValue(self, play):
-        cards = play.split("/")
+        if len(play) == 0:
+            return -1
+        if play[0] == "|":
+            play = "T" + play
+        cards = play.split("|")
         value = 0
 
         for card in cards:
+            if len(card) == 0:
+                continue
             # If it's a play indicator, skip
             if card[0] == "T" or card[0] == "C" or card[0] == "B":
                 continue
@@ -73,41 +105,59 @@ class AI:
 
         return value
 
-    def __findBestCapture(self, gameBoard, hand, forBuilds=False):
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def findBestCapture(self, gameBoard, hand):
+        return self.__findBestCapture(gameBoard, hand)
+
+    def __findBestCapture(self, gameBoard, hand, forBuilds=False, buildValue=0):
         table = gameBoard[0]
         
         combinations = []
         for card in hand:
-            plays = self.__findCombinations(table, self.__getCardValue(card.value))
-            # For each play, add the card used for the play at the frot of the play string
-            for i, play in enumerate(plays):
-                plays[i] = pydealer.card.card_abbrev(card.value, card.suit) + "/" + plays[i]
-                if self.__getCardValue(card.value) in gameBoard[1]:
-                        plays[i] += "/SB" + str(self.__getCardValue(card.value))
+            value = self.__getCardValue(card.value)
+            if forBuilds:
+                value = buildValue
+                if self.__getCardValue(card.value) > value:
+                    continue
+                else:
+                    value -= self.__getCardValue(card.value)
+
+            plays = self.__findCombinations(table, value)
+
+            if plays is not None:
+                # For each play, add the card used for the play at the frot of the play string
+                for i, play in enumerate(plays):
+                    plays[i] = pydealer.card.card_abbrev(card.value, card.suit) + plays[i]
+                    if self.__getCardValue(card.value) in gameBoard[1]:
+                            plays[i] += "|SB" + str(self.__getCardValue(card.value))
+
+                if not forBuilds:
+                    # Check if builds can be captured, add to the end of each combo
+                    for i, play in enumerate(plays):
+                        # Add the C to the front. We only want this if the function is called by itself,
+                        # not when it's helping find builds
+                        plays[i] = "C|" + plays[i]
+                        
+                        if self.__getCardValue(card.value) in gameBoard[2]:
+                            plays[i] += "|MB" + str(self.__getCardValue(card.value))
 
             if not forBuilds:
-                # Check if builds can be captured, add to the end of each combo
-                for i, play in enumerate(plays):
-                    # Add the C to the front. We only want this if the function is called by itself,
-                    # not when it's helping find builds
-                    plays[i] = "C" + plays[i]
-
-                    
-                    if self.__getCardValue(card.value) in gameBoard[2]:
-                        plays[i] += "/MB" + str(self.__getCardValue(card.value))
                 # add to end of plays for just capturing builds
                 if self.__getCardValue(card.value) in gameBoard[1] and self.__getCardValue(card.value) in gameBoard[2]:
-                    plays.append("C/%s/SB%d/MB%d" % (pydealer.card.card_abbrev(card.value, card.suit), self.__getCardValue(card.value), self.__getCardValue(card.value)))
+                    plays.append("C|%s|SB%d|MB%d" % (pydealer.card.card_abbrev(card.value, card.suit), self.__getCardValue(card.value), self.__getCardValue(card.value)))
                 elif self.__getCardValue(card.value) in gameBoard[2]:
-                    plays.append("C/"+ pydealer.card.card_abbrev(card.value, card.suit) +"/MB" + str(self.__getCardValue(card.value)))
+                    plays.append("C|"+ pydealer.card.card_abbrev(card.value, card.suit) +"|MB" + str(self.__getCardValue(card.value)))
             if self.__getCardValue(card.value) in gameBoard[1]:
-                plays.append("C/"+ pydealer.card.card_abbrev(card.value, card.suit) +"/SB" + str(self.__getCardValue(card.value)))
+                plays.append("C|"+ pydealer.card.card_abbrev(card.value, card.suit) +"|SB" + str(self.__getCardValue(card.value)))
 
-            combinations.extend(plays)
+            if plays is not None:
+                combinations.extend(plays)
         
         # If no combinations found, trail first card of hand
         if len(combinations) == 0:
-            return "T/%s/0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
+            return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
 
         # otherwise, figure out the best combo and return that
         index = 0
@@ -119,12 +169,42 @@ class AI:
                 index = i
         
         if not forBuilds:
-            return combinations[index] + "/" + str(maximum)
+            return combinations[index] + "|" + str(maximum)
         else:
             return combinations[index]
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def findBestBuild(self, gameBoard, hand):
+        return self.__findBestBuild(gameBoard, hand)
+
     def __findBestBuild(self, gameBoard, hand):
-        return ""
+        builds = []
+
+        for card in hand:
+            value = self.__getCardValue(card.value)
+            cards = copy.deepcopy(hand)
+            cards.get(pydealer.card.card_abbrev(card.value, card.suit))
+            bestBuild = self.__findBestCapture(gameBoard, cards, forBuilds=True, buildValue=value)
+            if bestBuild[0] != "T":
+                bestBuild = "B|" + str(value)+ "|" + bestBuild
+                builds.append(bestBuild)
+
+        # If no builds found, trail first card of hand
+        if len(builds) == 0:
+            return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
+
+        # otherwise, figure out the best build and return that
+        index = 0
+        maximum = 0
+        for i, play in enumerate(builds):
+            value = self.__getPlayValue(play)
+            if value > maximum:
+                maximum = value
+                index = i
+
+        return builds[index] + "|" + str(maximum)
 
     def __createNewTreeNode(self, parent, play, playerMove=False):
         # copy current gamestate
@@ -151,6 +231,12 @@ class AI:
             return "K"
         else:
             return "Something went wrong"
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def getCardValue(self, value):
+        return self.__getCardValue(value)
 
     def __getCardValue(self, value):
         if value == "Ace" or value == "ace" or value == "A" or value == "a":
@@ -190,19 +276,19 @@ class AI:
         # (This is the termination condition for our recursive loop)
         if parent.aiHand.size <= 1:
             for node in children:
-                node.value = node.play.split("/")[-1]
+                node.value = node.play.split("|")[-1]
             return
         # Otherwise, figure out player's moves, and continue building the tree
         else:
             # for each possible move
             for node in children:
                 # for each possible card in the player's hand
-                for value in range(1, 13):
+                for value in range(1, 14):
                     # If all of the cards of this value have been played already, skip 
-                    if len(node.cardsPlayed.find(self.__getValueName(value))) == 4:
+                    if node.cardsPlayed[value] == 4:
                         continue
                     # Otherwise, get a card of that value into a dummy hand
-                    deck = pydealer.Deck()
+                    deck = pydealer.Deck(ranks=new_ranks)
                     hand = pydealer.Stack()
                     hand.add(deck.get(self.__getValueName(value) + "H"))
 
@@ -210,7 +296,7 @@ class AI:
                     play = self.__findBestCapture(node.gameBoard, hand)
 
                     newNode = self.__createNewTreeNode(node, play, playerMove=True)
-                    newNode.probability = (4 - node.cardsPlayed.find(self.__getValueName(value))) / (52 - node.cardsPlayed.size)
+                    newNode.probability = (4 - node.cardsPlayed[value]) / (52 - node.cardsPlayed.size)
                     self.__buildTree(newNode)
 
                     # figure out the value of this node (the greater value of it's children)
@@ -228,7 +314,7 @@ class AI:
                 expectedValue = 0.0
                 for child in node.children:
                     expectedValue += child.value * child.probability
-                node.value = expectedValue + node.play.split("/")[-1]
+                node.value = expectedValue + node.play.split("|")[-1]
                 
 
 
@@ -245,4 +331,40 @@ class AI:
         
     def playCard(self, play, gameBoard, hand, cardsPlayed, playerMove=False):
         return ""
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Test Code
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+deck = pydealer.Deck(ranks=new_ranks)
+hand = pydealer.Stack()
+table = pydealer.Stack()
+singleBuilds = {}
+multibuilds = {}
+
+deck.shuffle()
+
+table += deck.deal(4)
+hand += deck.deal(4)
+
+cardsPlayed = {}
+for i in range(1, 14):
+    cardsPlayed[i] = 0
+
+ai = AI()
+
+for card in table:
+    cardsPlayed[ai.getCardValue(card.value)] += 1
+
+print(table)
+print(hand)
+print(cardsPlayed)
+
+print(ai.findBestCapture([table, singleBuilds, multibuilds], hand))
+print(ai.findBestBuild([table, singleBuilds, multibuilds], hand))
 
