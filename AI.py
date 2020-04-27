@@ -130,6 +130,28 @@ class AI:
         result.extend(list2)
         return [value for value in result if value != ""]
 
+    def __pickTrailCard(self, hand):
+        if hand.size == 1:
+            return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
+        elif hand.size == 2:
+            index = 0
+            if self.__getCardValue(hand[1].value) < self.__getCardValue(hand[0].value):
+                index = 1
+            return "T|%s|0" % (pydealer.card.card_abbrev(hand[index].value, hand[index].suit))
+        else:
+            maximum = 0
+            index = 1
+            if self.__getCardValue(hand[1].value) > self.__getCardValue(hand[0].value):
+                maximum = 1
+                index = 0
+            for i in range(2, hand.size):
+                if self.__getCardValue(hand[maximum].value) < self.__getCardValue(hand[i].value):
+                    index = maximum
+                    maximum = i
+                elif self.__getCardValue(hand[index].value) < self.__getCardValue(hand[i].value):
+                    index = i
+            return "T|%s|0" % (pydealer.card.card_abbrev(hand[index].value, hand[index].suit))
+
     def __findBestCapture(self, gameBoard, hand, forBuilds=False, buildValue=0):
         table = gameBoard[0]
         
@@ -205,7 +227,7 @@ class AI:
         if len(combinations) == 0:
             # if not hand:
             #     return ""
-            return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
+            return self.__pickTrailCard(hand)
 
         # otherwise, figure out the best combo and return that
         index = 0
@@ -239,7 +261,7 @@ class AI:
         if len(builds) == 0:
             # if not hand:
             #     return ""
-            return "T|%s|0" % (pydealer.card.card_abbrev(hand[0].value, hand[0].suit))
+            return self.__pickTrailCard(hand)
 
         # otherwise, figure out the best build and return that
         index = 0
